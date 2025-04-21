@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import ReCAPTCHA from 'react-google-recaptcha';
 import logo from '../assets/logo.png';
 import * as yup from 'yup';
 import {
@@ -9,7 +10,10 @@ import {
   Button,
   Box,
   Alert,
+  IconButton,
+  InputAdornment,
 } from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 const schema = yup.object().shape({
@@ -19,6 +23,8 @@ const schema = yup.object().shape({
 
 const Login = () => {
   const [error, setError] = useState(null);
+  const [recaptchaToken, setRecaptchaToken] = useState(null);
+  const [showPassword, setShowPassword] = useState(false); // Estado para mostrar/ocultar contraseña
   const navigate = useNavigate();
 
   const {
@@ -28,12 +34,26 @@ const Login = () => {
   } = useForm();
 
   const onSubmit = async (data) => {
+    if (!recaptchaToken) {
+      setError('Por favor, verifica el reCAPTCHA.');
+      return;
+    }
+
     try {
       console.log('Datos enviados:', data);
+      console.log('reCAPTCHA Token:', recaptchaToken);
       navigate('/dashboard');
     } catch (err) {
       setError('Error al iniciar sesión');
     }
+  };
+
+  const handleRecaptchaChange = (token) => {
+    setRecaptchaToken(token);
+  };
+
+  const handleTogglePasswordVisibility = () => {
+    setShowPassword((prev) => !prev); // Cambia el estado de mostrar/ocultar contraseña
   };
 
   return (
@@ -106,11 +126,38 @@ const Login = () => {
             margin="normal"
             fullWidth
             label="Contraseña"
-            type="password"
+            type={showPassword ? 'text' : 'password'} // Cambia el tipo de input según el estado
             {...register('password')}
             error={!!errors.password}
             helperText={errors.password?.message}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={handleTogglePasswordVisibility}
+                    edge="end"
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
           />
+
+          {/* reCAPTCHA */}
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              mt: 2,
+              mb: 2,
+            }}
+          >
+            <ReCAPTCHA
+              sitekey="6LdnBR8rAAAAALjdAwk5F8VVeD0LKPCkuFAZCdaX"
+              onChange={handleRecaptchaChange}
+            />
+          </Box>
           <Button
             type="submit"
             fullWidth
